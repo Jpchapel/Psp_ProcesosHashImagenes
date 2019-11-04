@@ -1,62 +1,61 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package e171214;
 
-import gestor.Gestor;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
-/**
- *
- * @author perchajoa
- */
 public class E171214 {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-       Gestor gestor1 = null; 
-       Gestor gestor2 = null;
-       Gestor gestor3 = null;
-        try {
-
-            //Instanciamos un gestor por cada proceso que vayamos a usar
-            //Para el Lector
-            gestor1 = new Gestor("java -cp C:\\Users\\perchajoa\\Desktop\\Examen\\e171214\\Lector\\build\\classes lector.Lector");
-            //Para el programa fciv.exe
-            gestor2 = new Gestor("C:\\Users\\perchajoa\\Desktop\\Examen\\fciv.exe -sha1");
-            //Para la BD
-            gestor3 = new Gestor("java -cp C:\\Users\\perchajoa\\Desktop\\Examen\\e171214\\BD\\build\\classes bd.BD");
-            
-            String linea ="";
-            while (linea !=null) {
-                gestor1.escribir(linea);
-                System.out.println(gestor1.leer());
-                gestor2.escribir(linea);
-                System.out.println(gestor2.leer());
-                gestor3.escribir(linea);
-                System.out.println(gestor3.leer());
-            }
-            
-
-        } catch (IOException ex) {
-            Logger.getLogger(E171214.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            
-           try {
-               
-               gestor1.finalizar();
-               gestor2.finalizar();
-               
-           } catch (IOException ex) {
-               Logger.getLogger(E171214.class.getName()).log(Level.SEVERE, null, ex);
-           }
+    private String cálculoSHA(String archivo) throws IOException {
+        Process firma = Runtime.getRuntime().exec("F:\\CS DAM\\Programación de servizos e procesos\\Exámenes\\UD 1\\e181115\\fciv.exe " + archivo);
+        BufferedReader brFirma = new BufferedReader(new InputStreamReader(firma.getInputStream()));
+        String línea, anterior = "";
+        while ((línea = brFirma.readLine()) != null) {
+            //System.out.println(línea);
+            anterior = línea;
         }
+        String[] palabras = anterior.split(" ");
+        return palabras[0];
+    }
+
+    private void go(String directorio) throws IOException {
+        ArrayList<String> values = new ArrayList<>();
+        values.add("java");
+        values.add("-cp");
+        values.add("F:\\CS DAM\\Programación de servizos e procesos\\Exámenes\\UD 1\\e181115\\Solucion\\Lector\\build\\classes");
+        values.add("lector.Lector");
+        values.add(directorio);
+        Proceso lector = new Proceso(values);
+
+        values.clear();
+        values.add("java");
+        values.add("-cp");
+        values.add("F:\\CS DAM\\Programación de servizos e procesos\\Exámenes\\UD 1\\e181115\\Solucion\\BD\\build\\classes");
+        values.add("bd.BD");
+        values.add(directorio);
+        Proceso baseDatos = new Proceso(values);
+                
+        String línea;
+        String sha;
+        while ((línea = lector.leer()) != null) {
+            System.out.println("Procesando " + línea);
+            sha = cálculoSHA(línea);
+            System.out.println("\tSHA-1: " + sha);
+            baseDatos.escribir(sha);
+            if (baseDatos.leer().equalsIgnoreCase("true"))
+                System.out.println("\t" + línea + " ES UN ARCHIVO POTENCIALMENTE PELIGROSO.");
+            else
+                System.out.println("\t" + línea + " no está registrado como un archivo potencialmente peligroso.");
+            
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        // Se recibe como argumento el nombre del directorio 
+        // donde están las imágenes que se quieren procesar.
+        E171214 app = new E171214();
+        app.go(args[0]);
     }
 
 }
